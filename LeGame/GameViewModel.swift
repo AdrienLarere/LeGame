@@ -7,7 +7,7 @@ class GameViewModel: ObservableObject {
     @Published var bestScore: Int = 0
     @Published var showResult: Bool = false
     @Published var lastResult: Bool = false
-    @Published var gameMode: GameMode = .basic
+    @Published var selectedWordGroup: WordGroup = .basic
     @Published var isGameInProgress: Bool = false
     
     private var words: [Word] = []
@@ -29,8 +29,8 @@ class GameViewModel: ObservableObject {
         saveBestScore()
     }
     
-    func replayMissedWords(for mode: GameMode) {
-        words = getMissedWords(for: mode)
+    func replayMissedWords(for group: WordGroup) {
+        words = getMissedWords(for: group)
         currentScore = 0
         isGameInProgress = true
         nextWord()
@@ -43,33 +43,17 @@ class GameViewModel: ObservableObject {
     }
     
     func loadWords() {
-        switch gameMode {
+        switch selectedWordGroup {
         case .basic:
             words = loadBasicWords()
-        case .everyday:
-            // For now, we'll use dummy data for this mode
-            // You can expand this later with more words or Firestore integration
-            words = [
-                Word(englishWord: "House", frenchWord: "La maison", gender: .feminine),
-                Word(englishWord: "Car", frenchWord: "La voiture", gender: .feminine),
-                Word(englishWord: "Book", frenchWord: "Le livre", gender: .masculine)
-            ]
-        case .advanced:
-            // For now, we'll use dummy data for this mode
-            // You can expand this later with more words or Firestore integration
-            words = [
-                Word(englishWord: "Democracy", frenchWord: "La démocratie", gender: .feminine),
-                Word(englishWord: "Environment", frenchWord: "L'environnement", gender: .masculine),
-                Word(englishWord: "Philosophy", frenchWord: "La philosophie", gender: .feminine)
-            ]
+        case .common:
+            words = loadCommonWords()
+        case .family:
+            words = loadFamilyWords()
+        case .anatomy:
+            words = loadAnatomyWords()
         case .all:
-            // Combine all word lists
-            words = loadBasicWords() + [
-                // Add everyday and advanced words here
-                Word(englishWord: "House", frenchWord: "La maison", gender: .feminine),
-                Word(englishWord: "Car", frenchWord: "La voiture", gender: .feminine),
-                Word(englishWord: "Democracy", frenchWord: "La démocratie", gender: .feminine)
-            ]
+            words = loadBasicWords() + loadCommonWords() + loadFamilyWords() + loadAnatomyWords()
         }
         nextWord()
     }
@@ -133,6 +117,33 @@ class GameViewModel: ObservableObject {
         ]
     }
     
+    private func loadCommonWords() -> [Word] {
+        return [
+            Word(englishWord: "House", frenchWord: "La maison", gender: .feminine),
+            Word(englishWord: "Car", frenchWord: "La voiture", gender: .feminine),
+            Word(englishWord: "Book", frenchWord: "Le livre", gender: .masculine)
+            // Add more common words here
+        ]
+    }
+    
+    private func loadFamilyWords() -> [Word] {
+        return [
+            Word(englishWord: "Mother", frenchWord: "La mère", gender: .feminine),
+            Word(englishWord: "Father", frenchWord: "Le père", gender: .masculine),
+            Word(englishWord: "Sister", frenchWord: "La sœur", gender: .feminine)
+            // Add more family words here
+        ]
+    }
+    
+    private func loadAnatomyWords() -> [Word] {
+        return [
+            Word(englishWord: "Head", frenchWord: "La tête", gender: .feminine),
+            Word(englishWord: "Arm", frenchWord: "Le bras", gender: .masculine),
+            Word(englishWord: "Leg", frenchWord: "La jambe", gender: .feminine)
+            // Add more anatomy words here
+        ]
+    }
+    
     func nextWord() {
         currentWord = words.randomElement()
         showResult = false
@@ -155,8 +166,14 @@ class GameViewModel: ObservableObject {
         showResult = true
     }
     
-    func deleteMissedWords() {
-        missedWords.removeAll()
+    func deleteMissedWords(for group: WordGroup? = nil) {
+        if let group = group {
+            missedWords = missedWords.filter { word in
+                !getMissedWords(for: group).contains(word)
+            }
+        } else {
+            missedWords.removeAll()
+        }
         saveMissedWords()
     }
     
@@ -184,10 +201,22 @@ class GameViewModel: ObservableObject {
         }
     }
     
-    func getMissedWords(for mode: GameMode) -> [Word] {
-        // In a real app, you'd fetch this from Firestore or local storage
-        // For now, we'll just return the missedWords array if the mode matches
-        return mode == gameMode ? Array(missedWords) : []
+    func getMissedWords(for group: WordGroup) -> [Word] {
+        // Filter missed words based on the selected group
+        return Array(missedWords).filter { word in
+            switch group {
+            case .basic:
+                return loadBasicWords().contains(word)
+            case .common:
+                return loadCommonWords().contains(word)
+            case .family:
+                return loadFamilyWords().contains(word)
+            case .anatomy:
+                return loadAnatomyWords().contains(word)
+            case .all:
+                return true
+            }
+        }
     }
 }
 
@@ -219,11 +248,10 @@ enum Gender: String, Codable {
     case feminine
 }
 
-enum GameMode: String {
-    case basic = "Basic"
-    case everyday = "Everyday"
-    case advanced = "Advanced"
-    case all = "All Modes"
+enum WordGroup: String, CaseIterable {
+    case basic = "Basic Words"
+    case common = "Common Words"
+    case family = "Family Words"
+    case anatomy = "Anatomy Words"
+    case all = "All Words"
 }
-
-

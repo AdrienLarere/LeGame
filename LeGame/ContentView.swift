@@ -8,6 +8,8 @@ struct ContentView: View {
     @State private var boyOffset: Double = 0
     @State private var girlOffset: Double = 0
     @State private var showIntro = true
+    @State private var animationTrigger = false
+
     
     var body: some View {
         ZStack {
@@ -72,10 +74,10 @@ struct ContentView: View {
                 .multilineTextAlignment(.center)
                 .padding()
             
-            Picker("Game Mode", selection: $gameViewModel.gameMode) {
-                Text("Basic Words").tag(GameMode.basic)
-                Text("Everyday Words").tag(GameMode.everyday)
-                Text("Advanced Words").tag(GameMode.advanced)
+            Picker("Word Group", selection: $gameViewModel.selectedWordGroup) {
+                ForEach(WordGroup.allCases, id: \.self) { group in
+                    Text(group.rawValue).tag(group)
+                }
             }
             .pickerStyle(DefaultPickerStyle())
             .padding()
@@ -122,7 +124,7 @@ struct ContentView: View {
                                 .frame(height: 150)
                                 .scaleEffect(2.05)
                                 .rotation3DEffect(.degrees(boyOffset), axis: (x: 0, y: 1, z: 0))
-                                .animation(Animation.easeInOut(duration: 1).repeatForever(autoreverses: true), value: boyOffset)
+                                .animation(Animation.easeInOut(duration: 1).repeatForever(autoreverses: true), value: animationTrigger)
                                 .onTapGesture {
                                     checkAnswer(.masculine)
                                 }
@@ -140,7 +142,7 @@ struct ContentView: View {
                                 .frame(height: 150)
                                 .scaleEffect(1.35)
                                 .rotation3DEffect(.degrees(girlOffset), axis: (x: 0, y: 1, z: 0))
-                                .animation(Animation.easeInOut(duration: 1).repeatForever(autoreverses: true), value: girlOffset)
+                                .animation(Animation.easeInOut(duration: 1).repeatForever(autoreverses: true), value: animationTrigger)
                                 .onTapGesture {
                                     checkAnswer(.feminine)
                                 }
@@ -181,9 +183,12 @@ struct ContentView: View {
     }
     
     private func startOscillationAnimation() {
+        boyOffset = -12
+        girlOffset = 12
         withAnimation(Animation.easeInOut(duration: 1).repeatForever(autoreverses: true)) {
-            boyOffset = 15
-            girlOffset = -15
+            boyOffset = 12
+            girlOffset = -12
+            animationTrigger.toggle()  // Add this line
         }
     }
 }

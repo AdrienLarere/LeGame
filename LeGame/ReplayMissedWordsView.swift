@@ -2,13 +2,14 @@ import SwiftUI
 
 struct ReplayMissedWordsView: View {
     @ObservedObject var gameViewModel: GameViewModel
+    let group: WordGroup  // Add this line
     @State private var currentWordIndex = 0
     @State private var showingAnswer = false
     @State private var isCorrect = false
     @Environment(\.presentationMode) var presentationMode
 
     var missedWords: [Word] {
-        gameViewModel.getAllMissedWords()
+        gameViewModel.getMissedWords(for: group)  // Update this line
     }
 
     var body: some View {

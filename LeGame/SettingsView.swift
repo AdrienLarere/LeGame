@@ -8,10 +8,11 @@ struct SettingsView: View {
         NavigationView {
             Form {
                 Section(header: Text("Review Missed Words")) {
-                    NavigationLink("Very Basic Words", destination: ReviewWordsView(mode: .basic, gameViewModel: gameViewModel))
-                    NavigationLink("Everyday Words", destination: ReviewWordsView(mode: .everyday, gameViewModel: gameViewModel))
-                    NavigationLink("Advanced Words", destination: ReviewWordsView(mode: .advanced, gameViewModel: gameViewModel))
-                    NavigationLink("All Modes", destination: ReviewWordsView(mode: .all, gameViewModel: gameViewModel))
+                    NavigationLink("Basic Words", destination: ReviewWordsView(group: .basic, gameViewModel: gameViewModel))
+                    NavigationLink("Common Words", destination: ReviewWordsView(group: .common, gameViewModel: gameViewModel))
+                    NavigationLink("Family Words", destination: ReviewWordsView(group: .family, gameViewModel: gameViewModel))
+                    NavigationLink("Anatomy Words", destination: ReviewWordsView(group: .anatomy, gameViewModel: gameViewModel))
+                    NavigationLink("All Words", destination: ReviewWordsView(group: .all, gameViewModel: gameViewModel))
                 }
             }
             .navigationTitle("Settings")
@@ -23,7 +24,7 @@ struct SettingsView: View {
 }
 
 struct ReviewWordsView: View {
-    let mode: GameMode
+    let group: WordGroup
     @ObservedObject var gameViewModel: GameViewModel
     @State private var showingReplayGame = false
     @State private var showingDeleteAlert = false
@@ -35,7 +36,7 @@ struct ReviewWordsView: View {
                     Text("Missed Words")
                         .font(.headline)
                         .bold()
-                    Text(mode.rawValue)
+                    Text(group.rawValue)
                         .font(.subheadline)
                 }
                 Spacer()
@@ -51,7 +52,7 @@ struct ReviewWordsView: View {
             }
             .padding()
             
-            List(gameViewModel.getMissedWords(for: mode)) { word in
+            List(gameViewModel.getMissedWords(for: group)) { word in
                 VStack(alignment: .leading) {
                     Text(word.englishWord)
                         .font(.headline)
@@ -75,14 +76,14 @@ struct ReviewWordsView: View {
         }
         .navigationTitle("Review")
         .fullScreenCover(isPresented: $showingReplayGame) {
-            ReplayMissedWordsView(gameViewModel: gameViewModel)
+            ReplayMissedWordsView(gameViewModel: gameViewModel, group: group)
         }
         .alert(isPresented: $showingDeleteAlert) {
             Alert(
                 title: Text("Delete Missed Words"),
-                message: Text("Are you sure you want to delete all missed words for this mode?"),
+                message: Text("Are you sure you want to delete all missed words for this group?"),
                 primaryButton: .destructive(Text("Delete")) {
-                    gameViewModel.deleteMissedWords()
+                    gameViewModel.deleteMissedWords(for: group)
                 },
                 secondaryButton: .cancel()
             )
@@ -90,11 +91,9 @@ struct ReviewWordsView: View {
     }
 }
 
-// Note: We'll keep the GameView struct as it is, but it's not being used in the current implementation.
-// You may want to consider removing it if it's not needed elsewhere in your app.
 struct GameView: View {
     @ObservedObject var gameViewModel: GameViewModel
-    let mode: GameMode
+    let group: WordGroup
     let words: [Word]
     @State private var currentWordIndex = 0
     @State private var showingAnswer = false
